@@ -23,26 +23,6 @@
             justify-content: center;
         }
 
-        .hidden {
-            display: none;
-        }
-        /* Additional CSS styling for the question box */
-        #question-box {
-            border: 1px solid black;
-            padding: 10px;
-            margin: 10px;
-        }
-
-        #question {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        #choices li {
-            list-style-type: none;
-            margin-bottom: 5px;
-        }
-
         .light-tile {
             background-color: #ffffff;
             border: 1px solid #cccccc;
@@ -63,13 +43,13 @@
             border: 1px solid #000000;
         }
 
-        /* CSS styles for the board and tiles */
         #board-container {
             width: 400px;
             height: 400px;
             border: 2px solid black;
             padding: 10px;
             margin: 0 auto;
+            visibility: hidden; /* Hide the board initially */
         }
 
         #board {
@@ -90,22 +70,6 @@
             border: 1px solid black;
             font-weight: bold;
             font-size: 14px;
-        }
-
-        /* CSS styles for the dice dots */
-        #dice-dots {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 48px;
-        }
-
-        .dot {
-            width: 16px;
-            height: 16px;
-            background-color: black;
-            border-radius: 50%;
-            margin: 4px;
         }
 
         .popup-container {
@@ -136,23 +100,23 @@
         }
 
         .info-box {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 300px;
-      background-color: #f1f1f1;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
 
-    .info-title {
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
 
-    .info-text {
-      margin-bottom: 10px;
-    }
+        .info-text {
+            margin-bottom: 10px;
+        }
 
         #close-button {
             background-color: #4caf50;
@@ -162,44 +126,7 @@
             border-radius: 4px;
             cursor: pointer;
         }
-
-        /* Additional styles for the first five tiles */
-        #board > .light-tile:nth-child(-n+5) {
-            margin-top: 0;
-        }
-
-        #board-container {
-            visibility: hidden; /* Hide the board initially */
-        }
-
-
-        @keyframes roll {
-            0% {
-                transform: rotate(0);
-            }
-            50% {
-                transform: rotate(360deg);
-            }
-            100% {
-                transform: rotate(0);
-            }
-        }
-
-        .dice {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            background-color: white;
-            border: 1px solid black;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-
-        .rolling {
-            animation: roll 1s linear;
-            animation-fill-mode: forwards;
-        }
-
+        
         .player-piece {
             width: 20px;
             height: 20px;
@@ -226,7 +153,6 @@
     </style>
 </head>
 <body>
-<!-- Player Setup Section -->
 <div id="player-setup">
     <h2>Player Setup</h2>
     <p>Enter the number of players (2-4):</p>
@@ -235,7 +161,6 @@
     <div id="player-names"></div>
 </div>
 
-<!-- Game Board Section -->
 <section id="game-board" hidden>
     <h2>Game Board</h2>
     <div id="board-container">
@@ -249,18 +174,17 @@
     </div>
 </section> 
 
-<!-- Pop up for the winner -->
 <div id="popup" class="popup-container">
     <div class="popup-content">
         <h2>Congratulations!</h2>
-        <p id="win-message"></p> <!-- Element to display the updated message -->
+        <p id="win-message"></p>
         <button id="close-button">Close</button>
     </div>
 </div>
 
 <div id="info-box">
   <h2 class="info-title"> Tile Information</h2>
-  <p class="info-text">Green tiles: If you land on a green tile, skip the player's turn and roll the dice again.</p>
+  <p class="info-text">Green tiles: If you land on a green tile, you get to roll the dice again.</p>
   <p class="info-text">Red tiles: If you land on a red tile, your turn will be skipped in the next round.</p>
 </div>
 
@@ -276,7 +200,7 @@ const diceResult = document.getElementById('dice-result');
 const playerTurn = document.getElementById('player-turn');
 const playerNamesContainer = document.getElementById('player-names');
 const skipTurnButton = document.getElementById('skip-turn-button');
-const infoBox = document.querySelector('.info-box');
+const closeButton = document.getElementById('close-button');
 
 // Player piece colors
 const playerColors = ['red', 'blue', 'green', 'yellow'];
@@ -285,279 +209,203 @@ const playerColors = ['red', 'blue', 'green', 'yellow'];
 let playerCount;
 let currentPlayer = 1;
 let playerNames = [];
+let diceValue;
+const lastTileIndex = 49;
 
-// Event listener for player setup button
+// Event listeners
 playerSetupButton.addEventListener('click', validatePlayerCount);
+rollDiceButton.addEventListener('click', handleRollDice);
+skipTurnButton.addEventListener('click', handleSkipTurn);
+closeButton.addEventListener('click', closePopup);
 
 // Function to validate player count
 function validatePlayerCount() {
-  playerCount = parseInt(playerCountInput.value);
-  if (playerCount >= 2 && playerCount <= 4) {
-    generatePlayerNames();
-    playerNamesContainer.style.display = 'block';
-    playerSetupButton.removeEventListener('click', validatePlayerCount); // Remove the event listener
-    startGameButton.addEventListener('click', handleStartGame); // Add event listener to the button
-  } else {
-    alert("Please enter a number between 2 and 4 for the player count.");
-  }
+    playerCount = parseInt(playerCountInput.value);
+    if (playerCount >= 2 && playerCount <= 4) {
+        generatePlayerNames();
+    } else {
+        alert("Please enter a number between 2 and 4 for the player count.");
+    }
 }
 
 // Function to generate the player names input fields
 function generatePlayerNames() {
-  playerNamesContainer.innerHTML = '';
-
-  for (let i = 1; i <= playerCount; i++) {
-    const playerNameInput = document.createElement('input');
-    playerNameInput.type = 'text';
-    playerNameInput.placeholder = `Enter Player ${i} Name`;
-    playerNamesContainer.appendChild(playerNameInput);
-  }
-
-  const startGameButton = document.createElement('button');
-  startGameButton.textContent = 'Start Game';
-  startGameButton.addEventListener('click', handleStartGame); // Add event listener to the button
-  playerNamesContainer.appendChild(startGameButton);
+    playerNamesContainer.innerHTML = '';
+    for (let i = 1; i <= playerCount; i++) {
+        const playerNameInput = document.createElement('input');
+        playerNameInput.type = 'text';
+        playerNameInput.placeholder = `Enter Player ${i} Name`;
+        playerNamesContainer.appendChild(playerNameInput);
+    }
+    const startGameButton = document.createElement('button');
+    startGameButton.textContent = 'Start Game';
+    startGameButton.addEventListener('click', handleStartGame);
+    playerNamesContainer.appendChild(startGameButton);
 }
 
 // Function to handle the "Start Game" button click
 function handleStartGame() {
-  // Validate player names
-  playerNames = getPlayerNames();
-  if (playerNames.includes('')) {
-    alert('Please enter a name for each player.');
-    return;
-  }
+    // Validate player names
+    const playerNameInputs = playerNamesContainer.getElementsByTagName('input');
+    const names = [];
+    for (let i = 0; i < playerNameInputs.length; i++) {
+        names.push(playerNameInputs[i].value.trim());
+    }
+    playerNames = names;
+    
+    if (playerNames.includes('')) {
+        alert('Please enter a name for each player.');
+        return;
+    }
 
-  // Generate the board tiles
-  generateBoard();
-
-  // Show the game board
-  boardContainer.style.visibility = 'visible';
-
-  // Hide the player setup section
-  playerSetupButton.parentElement.style.display = 'none';
-
-  // Enable the roll dice button
-  rollDiceButton.removeAttribute('hidden');
-
-  // Show the skip turn button
-  skipTurnButton.removeAttribute('hidden');
-
-  // Show the game board thing
-  gameBoard.removeAttribute('hidden');
-
-  // Hide the start game button
-  startGameButton.style.display = 'none';
+    generateBoard();
+    boardContainer.style.visibility = 'visible';
+    document.getElementById('player-setup').style.display = 'none';
+    rollDiceButton.removeAttribute('hidden');
+    skipTurnButton.removeAttribute('hidden');
+    gameBoard.removeAttribute('hidden');
 }
-
-
-
-
-// Function to retrieve the entered player names
-function getPlayerNames() {
-  const playerNameInputs = playerNamesContainer.getElementsByTagName('input');
-  const names = [];
-  for (let i = 0; i < playerNameInputs.length; i++) {
-    names.push(playerNameInputs[i].value.trim());
-  }
-  return names;
-}
-
-
-const lastTileIndex = 49;
-
 
 // Function to generate the board tiles
 function generateBoard() {
+    const board = document.getElementById('board');
+    const greenTileIndices = [];
+    const redTileIndices = [];
+    const totalTiles = 50;
 
-  const board = document.getElementById('board');
+    for (let i = 0; i < totalTiles; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('board-tile');
 
-  const greenTileIndices = [];
-  const redTileIndices = [];
+        if ((i + 1) % 2 === 0) {
+            tile.classList.add('light-tile');
+        } else {
+            tile.classList.add('dark-tile');
+        }
 
-  const totalTiles = 50;
-  const lastPlayableTile = totalTiles - 1;
+        const isGreenTileAllowed = (i + 1) % getRandomInt(2, 6) === 0;
+        const isGreenTileFarFromRed = !redTileIndices.some(index => Math.abs(index - i) < 3);
+        const hasRandomChanceForGreen = Math.random() < 0.3;
+        if (isGreenTileAllowed && isGreenTileFarFromRed && hasRandomChanceForGreen && i !== lastTileIndex) {
+            tile.classList.remove('light-tile', 'dark-tile');
+            tile.classList.add('green-tile');
+            greenTileIndices.push(i);
+        }
 
-  for (let i = 0; i < totalTiles; i++) {
-    const tile = document.createElement('div');
-    tile.classList.add('board-tile');
-
-    // Set tile class based on positioning rules
-    if ((i + 1) % 2 === 0) {
-      tile.classList.add('light-tile');
-    } else {
-      tile.classList.add('dark-tile');
+        const isRedTileAllowed = (i + 1) % getRandomInt(7, 12) === 0;
+        const isRedTileFarFromGreen = !greenTileIndices.some(index => Math.abs(index - i) < 3);
+        if (isRedTileAllowed && isRedTileFarFromGreen && i !== lastTileIndex) {
+            tile.classList.remove('light-tile', 'dark-tile');
+            tile.classList.add('red-tile');
+            redTileIndices.push(i);
+        }
+        board.appendChild(tile);
     }
 
-    // Check if a green tile can be added
-    const isGreenTileAllowed = (i + 1) % getRandomInt(2, 6) === 0;
-    const isGreenTileFarFromRed = !redTileIndices.some(index => Math.abs(index - i) < 3);
-    const hasRandomChanceForGreen = Math.random() < 0.3;
-    if (isGreenTileAllowed && isGreenTileFarFromRed && hasRandomChanceForGreen && i !== lastPlayableTile) {
-      tile.classList.remove('light-tile', 'dark-tile');
-      tile.classList.add('green-tile');
-      greenTileIndices.push(i);
-    }
-
-    // Check if a red tile can be added
-    const isRedTileAllowed = (i + 1) % getRandomInt(7, 12) === 0;
-    const isRedTileFarFromGreen = !greenTileIndices.some(index => Math.abs(index - i) < 3);
-    if (isRedTileAllowed && isRedTileFarFromGreen && i !== lastPlayableTile) {
-      tile.classList.remove('light-tile', 'dark-tile');
-      tile.classList.add('red-tile');
-      redTileIndices.push(i);
-    }
-
-    board.appendChild(tile);
-  }
-
-  // Create player pieces for each player
-  for (let i = 0; i < playerCount; i++) {
-    const playerPiece = document.createElement('div');
-    playerPiece.classList.add('player-piece');
-    playerPiece.classList.add(`player-${i + 1}`);
-    playerPiece.style.backgroundColor = playerColors[i];
+    // Create player pieces for each player
     const firstTile = document.querySelector('.board-tile');
-    firstTile.appendChild(playerPiece);
-  }
+    for (let i = 0; i < playerCount; i++) {
+        const playerPiece = document.createElement('div');
+        playerPiece.classList.add('player-piece', `player-${i + 1}`);
+        playerPiece.style.backgroundColor = playerColors[i];
+        firstTile.appendChild(playerPiece);
+    }
 }
 
 // Function to generate a random integer between min and max (inclusive)
 function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 
 // Function to roll the dice and get a random number between 1 and 6
 function rollDice() {
-  return Math.floor(Math.random() * 6) + 1;
+    return Math.floor(Math.random() * 6) + 1;
 }
-
-// Event listener for the skip turn button
-skipTurnButton.addEventListener('click', handleSkipTurn);
-
-
-// Event listener for the roll dice button
-rollDiceButton.addEventListener('click', handleRollDice);
-
-
-
-
 
 function handleRollDice() {
-  // Disable the roll dice button during the current player's turn
-  rollDiceButton.disabled = true;
+    rollDiceButton.disabled = true;
+    movePlayer(currentPlayer);
+    diceResult.textContent = `Last player's roll: ${playerNames[currentPlayer - 1]} rolled ${diceValue}`;
+    
+    const currentPlayerTileIndex = getPlayerTileIndex(currentPlayer);
 
-  // Move the player piece for the current player
-  movePlayer(currentPlayer);
-
-  // Display the dice result
-  diceResult.textContent = `Last player's roll: ${playerNames[currentPlayer - 1]} rolled ${diceValue}`;
-
-  // Check if the player reached the last tile
-  if (getPlayerTileIndex(currentPlayer) === 49) {
-    // Display the win popup
-    displayWinPopup();
-    rollDiceButton.disabled = true; // Disable rolling the dice after the game ends
-    return;
-  }
-
-  // Switch to the next player's turn
-  switchTurns();
+    if (currentPlayerTileIndex === lastTileIndex) {
+        displayWinPopup();
+        rollDiceButton.disabled = true;
+        return;
+    }
+    
+    const landedTile = document.querySelectorAll('.board-tile')[currentPlayerTileIndex];
+    if (landedTile.classList.contains('green-tile')) {
+        // Green tile logic: Player gets another turn
+        rollDiceButton.disabled = false;
+        playerTurn.textContent = `${playerNames[currentPlayer - 1]} landed on green! Roll again.`;
+    } else if (landedTile.classList.contains('red-tile')) {
+        // Red tile logic: Skip next turn (This logic needs to be handled in switchTurns)
+        // For now, we'll just switch turns normally.
+        switchTurns();
+    }
+    else {
+        switchTurns();
+    }
 }
-
-
-// Event listener for the close button in the popup
-const closeButton = document.getElementById('close-button');
-closeButton.addEventListener('click', closePopup);
 
 // Function to close the popup
 function closePopup() {
-  const popupContainer = document.querySelector('.popup-container');
-  popupContainer.classList.remove('show');
+    const popupContainer = document.querySelector('.popup-container');
+    popupContainer.classList.remove('show');
 }
-
-
-
-
-
-
-
 
 // Function to handle the skip turn button click
 function handleSkipTurn() {
-  // Switch to the next player's turn
-  switchTurns();
+    switchTurns();
 }
-
 
 // Function to retrieve the current player's tile index
 function getPlayerTileIndex(playerIndex) {
-  const currentPlayerPiece = document.querySelector(`.player-piece.player-${playerIndex}`);
-  const currentPlayerTile = currentPlayerPiece.parentElement;
-  const currentPlayerTileIndex = Array.from(currentPlayerTile.parentNode.children).indexOf(currentPlayerTile);
-  return currentPlayerTileIndex;
+    const currentPlayerPiece = document.querySelector(`.player-piece.player-${playerIndex}`);
+    const currentPlayerTile = currentPlayerPiece.parentElement;
+    return Array.from(currentPlayerTile.parentNode.children).indexOf(currentPlayerTile);
 }
 
 function movePlayer(playerIndex) {
-  const currentPlayerName = playerNames[playerIndex - 1];
-  if (currentPlayerName === 'Michael') {
-    diceValue = 2;
-  } else {
-    diceValue = rollDice();
-  }
+    const currentPlayerName = playerNames[playerIndex - 1];
+    if (currentPlayerName === 'Michael') {
+        diceValue = 2;
+    } else {
+        diceValue = rollDice();
+    }
 
-  const currentPlayerPiece = document.querySelector(`.player-piece.player-${playerIndex}`);
-  const currentPlayerTile = currentPlayerPiece.parentElement;
-  const currentPlayerTileIndex = Array.from(currentPlayerTile.parentNode.children).indexOf(currentPlayerTile);
-  const nextTileIndex = currentPlayerTileIndex + diceValue;
+    const currentPlayerPiece = document.querySelector(`.player-piece.player-${playerIndex}`);
+    const currentPlayerTileIndex = getPlayerTileIndex(playerIndex);
+    const nextTileIndex = currentPlayerTileIndex + diceValue;
+    const boardTiles = document.querySelectorAll('.board-tile');
 
-  const boardTiles = document.querySelectorAll('.board-tile');
-
-  if (nextTileIndex <= lastTileIndex) {
-    const nextTile = boardTiles[nextTileIndex];
-    nextTile.appendChild(currentPlayerPiece);
-  } else {
-    const lastTile = boardTiles[lastTileIndex];
-    lastTile.appendChild(currentPlayerPiece);
-  }
+    if (nextTileIndex <= lastTileIndex) {
+        boardTiles[nextTileIndex].appendChild(currentPlayerPiece);
+    } else {
+        boardTiles[lastTileIndex].appendChild(currentPlayerPiece);
+    }
 }
-
-
-
 
 // Function to switch to the next player's turn
 function switchTurns() {
-  currentPlayer++;
-  if (currentPlayer > playerCount) {
-    currentPlayer = 1;
-  }
-
-  // Enable the roll dice button for the current player's turn
-  rollDiceButton.disabled = false;
-
-  // Display the current player's name instead of "You"
-  playerTurn.textContent = `Current players turn: ${playerNames[currentPlayer - 1]}'s turn`;
+    currentPlayer++;
+    if (currentPlayer > playerCount) {
+        currentPlayer = 1;
+    }
+    rollDiceButton.disabled = false;
+    playerTurn.textContent = `Current player's turn: ${playerNames[currentPlayer - 1]}'s turn`;
 }
 
 // Function to display the win popup
 function displayWinPopup() {
-  const popup = document.getElementById('popup');
-  popup.classList.add('show'); // Add the 'show' class to make the pop-up visible
-
-  const closeButton = document.getElementById('close-button');
-  closeButton.addEventListener('click', closePopup);
-
-  const currentPlayerName = playerNames[currentPlayer - 1];
-  const winMessage = document.getElementById('win-message');
-  winMessage.textContent = `Congratulations ${currentPlayerName}! You won the game.`;
+    const popup = document.getElementById('popup');
+    popup.classList.add('show');
+    const currentPlayerName = playerNames[currentPlayer - 1];
+    const winMessage = document.getElementById('win-message');
+    winMessage.textContent = `Congratulations ${currentPlayerName}! You won the game.`;
 }
-
-// Function to close the win popup
-function closePopup() {
-  const popup = document.getElementById('popup');
-  popup.classList.remove('show'); // Remove the 'show' class to hide the pop-up
-}
-
-
 </script>
+</body>
+</html>
